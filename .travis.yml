@@ -1,0 +1,28 @@
+language: go
+go: 1.4
+
+services:
+  - mongodb # 2.4.12
+
+install:
+  - pwd
+  - ls
+  - export GOPATH=`pwd`
+  - echo $GOPATH
+  # - go install github.com/revel/cmd/revel
+  - cd src/github.com/leanote/leanote
+  - pwd
+  - ls
+
+script:
+  - mongo --version
+  - mongorestore -h localhost -d leanote --directoryperdb ./mongodb_backup/leanote_install_data/
+  
+  # - go test github.com/leanote/leanote/app/tests
+  
+  - go build -o leanote github.com/leanote/leanote/app/tmp
+  - ./leanote -importPath=github.com/leanote/leanote -runMode=dev -port=9000 &
+  - sleep 10s
+  - wget http://localhost:9000
+  # - revel build github.com/leanote/leanote tmp
+  # OK

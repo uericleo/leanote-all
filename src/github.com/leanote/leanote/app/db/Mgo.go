@@ -2,10 +2,11 @@ package db
 
 import (
 	"fmt"
-	"github.com/revel/revel"
 	. "github.com/leanote/leanote/app/lea"
+	"github.com/revel/revel"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"strings"
 )
 
 // Init mgo and the common DAO
@@ -60,12 +61,28 @@ var Sessions *mgo.Collection
 func Init(url, dbname string) {
 	ok := true
 	config := revel.Config
-	if url == "" { 
+	if url == "" {
 		url, ok = config.String("db.url")
+		if !ok {
+			url, ok = config.String("db.urlEnv")
+			if ok {
+				Log("get db conf from urlEnv: " + url)
+			}
+		} else {
+			Log("get db conf from db.url: " + url)
+		}
+
+		if ok {
+			// get dbname from urlEnv
+			urls := strings.Split(url, "/")
+			dbname = urls[len(urls)-1]
+		}
 	}
 	if dbname == "" {
 		dbname, _ = config.String("db.dbname")
 	}
+
+	// get db config from host, port, username, password
 	if !ok {
 		host, _ := revel.Config.String("db.host")
 		port, _ := revel.Config.String("db.port")
@@ -107,7 +124,7 @@ func Init(url, dbname string) {
 
 	// user
 	Users = Session.DB(dbname).C("users")
-	// group 
+	// group
 	Groups = Session.DB(dbname).C("groups")
 	GroupUsers = Session.DB(dbname).C("group_users")
 
@@ -337,4 +354,21 @@ func Err(err error) bool {
 		return false
 	}
 	return true
+}
+
+// 检查mognodb是否lost connection
+// 每个请求之前都要检查!!
+func CheckMongoSessionLost() {
+	// fmt.Println("检查CheckMongoSessionLostErr")
+	err := Session.Ping()
+	if err != nil {
+		Log("Lost connection to db!")
+		Session.Refresh()
+		err = Session.Ping()
+		if err == nil {
+			Log("Reconnect to db successful.")
+		} else {
+			Log("重连失败!!!! 警告")
+		}
+	}
 }

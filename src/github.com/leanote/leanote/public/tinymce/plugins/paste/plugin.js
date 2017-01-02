@@ -80,7 +80,7 @@
 		}
 	}
 
-// Included from: js/tinymce/plugins/paste/classes/Utils.js
+// Included from: /Users/life/leanote2/public/tinymce/plugins/paste/classes/Utils.js
 
 /**
  * Utils.js
@@ -181,7 +181,7 @@ define("tinymce/pasteplugin/Utils", [
 	};
 });
 
-// Included from: js/tinymce/plugins/paste/classes/Clipboard.js
+// Included from: /Users/life/leanote2/public/tinymce/plugins/paste/classes/Clipboard.js
 
 // Included from: js/tinymce/plugins/paste/classes/Clipboard.js
 
@@ -232,8 +232,9 @@ define("tinymce/pasteplugin/Clipboard", [
 			ajaxPost("/file/copyHttpImage", {src: src}, function(ret) {
 				if(reIsOk(ret)) {
 					// 将图片替换之
-					var src = urlPrefix + "/" + ret.Item;
-					var dom = editor.dom
+					// var src = urlPrefix + "/" + ret.Item;
+					var src = urlPrefix + "/file/outputImage?fileId=" + ret.Id;
+					var dom = editor.dom;
 					for(var i in ids) {
 						var id = ids[i];
 						var imgElm = dom.get(id);
@@ -299,7 +300,7 @@ define("tinymce/pasteplugin/Clipboard", [
 							var needCopyImages = {}; // src => [id1,id2]
 							var time = (new Date()).getTime();
 							try {
-								var $html = $("<div>" + html + "</div");
+								var $html = $("<div>" + html + "</div>");
 								var $imgs = $html.find("img");
 								for(var i = 0; i < $imgs.length; ++i) {
 									var $img = $imgs.eq(i)
@@ -525,7 +526,31 @@ define("tinymce/pasteplugin/Clipboard", [
 			document.body.appendChild(img);
 		}
 		
+		// 是否有图片的粘贴, 有则删除paste bin
+		// 因为paste bin隐藏不见了, 如果不删除, 则editor_drop_paste的图片就会在这个bin下
+		// 而且, paste bin最后会删除, 导致图片不能显示
+		function hasImage(event) {
+			var items;
+			if (event.clipboardData) {
+				items = event.clipboardData.items;
+			}
+			else if(event.originalEvent && event.originalEvent.clipboardData) {
+				items = event.originalEvent.clipboardData;
+			}
+			if (!items) {
+				return false;
+			}
+			// find pasted image among pasted items
+			for (var i = 0; i < items.length; i++) {
+				if (items[i].type.indexOf("image") === 0) {
+					return true;
+			    }
+			}
+			return false;
+		}
+		
 		// 上传图片
+		// 已过时, 不用, pasteImage在editor_drop_paste.js中用
 		function pasteImage(event) {
 			// use event.originalEvent.clipboard for newer chrome versions
 			  var items = (event.clipboardData  || event.originalEvent.clipboardData).items; // 可能有多个file, 找到属于图片的file
@@ -590,6 +615,12 @@ define("tinymce/pasteplugin/Clipboard", [
 
 		editor.on('paste', function(e) {
 			if(inAcePrevent()) {
+				removePasteBin();
+				return;
+			}
+			
+			if (hasImage(e)) {
+				removePasteBin();
 				return;
 			}
 
@@ -643,27 +674,14 @@ define("tinymce/pasteplugin/Clipboard", [
 					pasteHtml(html, clipboardContent['text/plain']);
 				}
 			}, 0);
-			
-			//-----------
-			// paste image
-			try {
-				/*
-				if(pasteImage(e)) {
-					return;
-				}
-				*/
-			} catch(e) {};
-
 		});
-		
-		
 
 		self.pasteHtml = pasteHtml;
 		self.pasteText = pasteText;
 	};
 });
 
-// Included from: js/tinymce/plugins/paste/classes/WordFilter.js
+// Included from: /Users/life/leanote2/public/tinymce/plugins/paste/classes/WordFilter.js
 
 /**
  * WordFilter.js
@@ -929,7 +947,7 @@ define("tinymce/pasteplugin/WordFilter", [
 	return WordFilter;
 });
 
-// Included from: js/tinymce/plugins/paste/classes/Quirks.js
+// Included from: /Users/life/leanote2/public/tinymce/plugins/paste/classes/Quirks.js
 
 /**
  * Quirks.js
@@ -1055,7 +1073,7 @@ define("tinymce/pasteplugin/Quirks", [
 	};
 });
 
-// Included from: js/tinymce/plugins/paste/classes/Plugin.js
+// Included from: /Users/life/leanote2/public/tinymce/plugins/paste/classes/Plugin.js
 
 /**
  * Plugin.js
@@ -1103,26 +1121,11 @@ define("tinymce/pasteplugin/Plugin", [
 				}
 			}
 		}
-		
-		function togglePasteCopyImage() {
-			if (clipboard.copyImage) {
-				this.active(false);
-				clipboard.copyImage = false
-			} else {
-				clipboard.copyImage = true;
-				this.active(true);
-				if (!userIsInformed2) {
-					editor.windowManager.alert(
-						"When copy other site's images (not in leanote) into editor, it will copy the image into your album."
-					);
-					userIsInformed2 = true;
-				}
-			}
-		}
 
 		self.clipboard = clipboard = new Clipboard(editor);
 		self.quirks = new Quirks(editor);
 		self.wordFilter = new WordFilter(editor);
+		clipboard.copyImage = true;
 
 		if (editor.settings.paste_as_text) {
 			self.clipboard.pasteFormat = "text";
@@ -1174,13 +1177,6 @@ define("tinymce/pasteplugin/Plugin", [
 			tooltip: 'Paste as text',
 			onclick: togglePlainTextPaste,
 			active: self.clipboard.pasteFormat == "text"
-		});
-		
-		editor.addButton('pasteCopyImage', {
-			icon: 'copy',
-			tooltip: "When Paste other site's image, copy it into my album as public image",
-			onclick: togglePasteCopyImage,
-			active: self.clipboard.copyImage === true
 		});
 
 		editor.addMenuItem('pastetext', {

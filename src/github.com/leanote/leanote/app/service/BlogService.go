@@ -45,7 +45,9 @@ func (this *BlogService) GetBlogByIdAndUrlTitle(userId string, noteIdOrUrlTitle 
 		return this.GetBlog(noteIdOrUrlTitle)
 	}
 	note := info.Note{}
-	db.GetByQ(db.Notes, bson.M{"UserId": bson.ObjectIdHex(userId), "UrlTitle": encodeValue(noteIdOrUrlTitle), "IsBlog": true, "IsTrash": false}, &note)
+	db.GetByQ(db.Notes, bson.M{"UserId": bson.ObjectIdHex(userId), "UrlTitle": encodeValue(noteIdOrUrlTitle),
+		"IsBlog":  true,
+		"IsTrash": false, "IsDeleted": false}, &note)
 	return this.GetBlogItem(note)
 }
 
@@ -56,7 +58,7 @@ func (this *BlogService) GetBlog(noteId string) (blog info.BlogItem) {
 }
 func (this *BlogService) GetBlogItem(note info.Note) (blog info.BlogItem) {
 	if note.NoteId == "" || !note.IsBlog {
-		return
+		return info.BlogItem{}
 	}
 
 	// 内容
@@ -131,7 +133,8 @@ func (this *BlogService) ListBlogs(userId, notebookId string, page, pageSize int
 func (this *BlogService) GetBlogTags(userId string) []info.TagCount {
 	// 得到所有博客
 	tagCounts := []info.TagCount{}
-	query := bson.M{"UserId": bson.ObjectIdHex(userId), "IsBlog": true}
+	// tag不能为空
+	query := bson.M{"UserId": bson.ObjectIdHex(userId), "IsBlog": true, "Tag": bson.M{"$ne": ""}}
 	db.TagCounts.Find(query).Sort("-Count").All(&tagCounts)
 	return tagCounts
 }
@@ -142,7 +145,7 @@ func (this *BlogService) ReCountBlogTags(userId string) bool {
 	// 得到所有博客
 	notes := []info.Note{}
 	userIdO := bson.ObjectIdHex(userId)
-	query := bson.M{"UserId": userIdO, "IsTrash": false, "IsBlog": true}
+	query := bson.M{"UserId": userIdO, "IsTrash": false, "IsDeleted": false, "IsBlog": true}
 	db.ListByQWithFields(db.Notes, query, []string{"Tags"}, &notes)
 
 	db.DeleteAll(db.TagCounts, bson.M{"UserId": userIdO, "IsBlog": true})
@@ -184,7 +187,7 @@ Posts: []
 */
 func (this *BlogService) ListBlogsArchive(userId, notebookId string, year, month int, sortField string, isAsc bool) []info.Archive {
 	//	_, notes := noteService.ListNotes(userId, notebookId, false, 1, 99999, sortField, isAsc, true);
-	q := bson.M{"UserId": bson.ObjectIdHex(userId), "IsBlog": true, "IsTrash": false}
+	q := bson.M{"UserId": bson.ObjectIdHex(userId), "IsBlog": true, "IsTrash": false, "IsDeleted": false}
 	if notebookId != "" {
 		q["NotebookId"] = bson.ObjectIdHex(notebookId)
 	}
@@ -291,9 +294,10 @@ func (this *BlogService) SearchBlogByTags(tags []string, userId string, pageNumb
 
 	// 不是trash的
 	query := bson.M{"UserId": bson.ObjectIdHex(userId),
-		"IsTrash": false,
-		"IsBlog":  true,
-		"Tags":    bson.M{"$all": tags}}
+		"IsTrash":   false,
+		"IsDeleted": false,
+		"IsBlog":    true,
+		"Tags":      bson.M{"$all": tags}}
 
 	q := db.Notes.Find(query)
 
@@ -366,10 +370,10 @@ func (this *BlogService) PreNextBlog(userId string, sorterField string, isAsc bo
 	if !isAsc {
 		// 降序
 		/*
-		------- pre
-		----- now
-		--- next
-		--
+			------- pre
+			----- now
+			--- next
+			--
 		*/
 		// 上一篇时间要比它大, 找最小的
 		sortFieldT1 = bson.M{"$gte": baseTime} // 为什么要相等, 因为将notebook发布成博客, 会统一修改note的publicTime, 此时所有notes都一样
@@ -393,12 +397,14 @@ func (this *BlogService) PreNextBlog(userId string, sorterField string, isAsc bo
 		sortFieldR2 = sorterField
 	}
 
+	// 1
 	// 上一篇, 比基时间要小, 但是是最后一篇, 所以是降序
 	note := info.Note{}
-	query := bson.M{"UserId": userIdO, 
-		"IsTrash": false, 
-		"IsBlog": true,
-		"_id": bson.M{"$ne": bson.ObjectIdHex(noteId)},
+	query := bson.M{"UserId": userIdO,
+		"IsTrash":   false,
+		"IsDeleted": false,
+		"IsBlog":    true,
+		"_id":       bson.M{"$ne": bson.ObjectIdHex(noteId)},
 		sorterField: sortFieldT1,
 	}
 	q := db.Notes.Find(query)
@@ -415,7 +421,7 @@ func (this *BlogService) PreNextBlog(userId string, sorterField string, isAsc bo
 	//	Log(sortFieldR2)
 	q = db.Notes.Find(query)
 	q.Sort(sortFieldR2).Limit(1).One(&note2)
-	
+
 	return this.FixNote(note), this.FixNote(note2)
 }
 
@@ -430,7 +436,7 @@ func (this *BlogService) ListAllBlogs(userId, tag string, keywords string, isRec
 	skipNum, sortFieldR := parsePageAndSort(page, pageSize, sorterField, isAsc)
 
 	// 不是trash的
-	query := bson.M{"IsTrash": false, "IsBlog": true, "Title": bson.M{"$ne": "欢迎来到leanote!"}}
+	query := bson.M{"IsTrash": false, "IsDeleted": false, "IsBlog": true, "Title": bson.M{"$ne": "欢迎来到leanote!"}}
 	if tag != "" {
 		query["Tags"] = bson.M{"$in": []string{tag}}
 	}
@@ -496,6 +502,9 @@ func (this *BlogService) ListAllBlogs(userId, tag string, keywords string, isRec
 				content = noteContent.Abstract
 			}
 		*/
+		if len(note.Tags) == 1 && note.Tags[0] == "" {
+			note.Tags = nil
+		}
 		blogs[i] = info.BlogItem{note, "", content, hasMore, userMap[note.UserId]}
 	}
 	pageInfo = info.NewPage(page, pageSize, count, nil)
@@ -509,7 +518,7 @@ func (this *BlogService) fixUserBlog(userBlog *info.UserBlog) {
 	// Logo路径问题, 有些有http: 有些没有
 	if userBlog.Logo != "" && !strings.HasPrefix(userBlog.Logo, "http") {
 		userBlog.Logo = strings.Trim(userBlog.Logo, "/")
-		userBlog.Logo = configService.GetSiteUrl() + "/" + userBlog.Logo
+		userBlog.Logo = "/" + userBlog.Logo
 	}
 
 	if userBlog.SortField == "" {
@@ -910,7 +919,7 @@ func (this *BlogService) UpateCateUrlTitle(userId string, cateId, urlTitle strin
 			"UrlTitle": "",
 		})
 	*/
-	url = GetUrTitle(userId, urlTitle, "notebook")
+	url = GetUrTitle(userId, urlTitle, "notebook", cateId)
 	ok = db.UpdateByIdAndUserIdMap(db.Notebooks, cateId, userId, bson.M{
 		"UrlTitle": url,
 	})
@@ -926,7 +935,7 @@ func (this *BlogService) UpateBlogUrlTitle(userId string, noteId, urlTitle strin
 	ok = db.UpdateByIdAndUserIdMap(db.Notes, noteId, userId, bson.M{
 		"UrlTitle": "",
 	})
-	url = GetUrTitle(userId, urlTitle, "note")
+	url = GetUrTitle(userId, urlTitle, "note", noteId)
 	ok = db.UpdateByIdAndUserIdMap(db.Notes, noteId, userId, bson.M{
 		"UrlTitle": url,
 	})
@@ -1027,7 +1036,7 @@ func (this *BlogService) UpdateSingleUrlTitle(userId, singleId, urlTitle string)
 			"UrlTitle": "",
 		})
 	*/
-	url = GetUrTitle(userId, urlTitle, "single")
+	url = GetUrTitle(userId, urlTitle, "single", singleId)
 	ok = db.UpdateByIdAndUserIdMap(db.BlogSingles, singleId, userId, bson.M{
 		"UrlTitle": url,
 	})
@@ -1061,7 +1070,7 @@ func (this *BlogService) AddOrUpdateSingle(userId, singleId, title, content stri
 		UserId:      bson.ObjectIdHex(userId),
 		Title:       title,
 		Content:     content,
-		UrlTitle:    GetUrTitle(userId, title, "single"),
+		UrlTitle:    GetUrTitle(userId, title, "single", singleId),
 		CreatedTime: time.Now(),
 	}
 	page.UpdatedTime = page.CreatedTime
@@ -1099,6 +1108,7 @@ func (this *BlogService) SortSingles(userId string, singleIds []string) (ok bool
 
 // 得到用户的博客url
 func (this *BlogService) GetUserBlogUrl(userBlog *info.UserBlog, username string) string {
+	/*
 	if userBlog != nil {
 		if userBlog.Domain != "" && configService.AllowCustomDomain() {
 			return configService.GetUserUrl(userBlog.Domain)
@@ -1109,12 +1119,15 @@ func (this *BlogService) GetUserBlogUrl(userBlog *info.UserBlog, username string
 			username = userBlog.UserId.Hex()
 		}
 	}
+	*/
 	return configService.GetBlogUrl() + "/" + username
 }
 
 // 得到所有url
 func (this *BlogService) GetBlogUrls(userBlog *info.UserBlog, userInfo *info.User) info.BlogUrls {
 	var indexUrl, postUrl, searchUrl, cateUrl, singleUrl, tagsUrl, archiveUrl, tagPostsUrl string
+	
+	/*
 	if userBlog.Domain != "" && configService.AllowCustomDomain() { // http://demo.com
 		// ok
 		indexUrl = configService.GetUserUrl(userBlog.Domain)
@@ -1135,6 +1148,7 @@ func (this *BlogService) GetBlogUrls(userBlog *info.UserBlog, userInfo *info.Use
 		tagsUrl = indexUrl + "/tags"
 		tagPostsUrl = indexUrl + "/tag"
 	} else {
+		*/
 		// ok
 		blogUrl := configService.GetBlogUrl() // blog.leanote.com
 		userIdOrEmail := ""
@@ -1153,7 +1167,7 @@ func (this *BlogService) GetBlogUrls(userBlog *info.UserBlog, userInfo *info.Use
 		archiveUrl = blogUrl + "/archives/" + userIdOrEmail // blog.leanote.com/archive/username
 		tagsUrl = blogUrl + "/tags/" + userIdOrEmail
 		tagPostsUrl = blogUrl + "/tag/" + userIdOrEmail // blog.leanote.com/archive/username
-	}
+	// }
 
 	return info.BlogUrls{
 		IndexUrl:    indexUrl,

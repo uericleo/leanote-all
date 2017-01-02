@@ -57,9 +57,9 @@ func (c Blog) render(templateName string, themePath string) revel.Result {
 		isPreview = true
 		themePath = themePath2.(string)
 		c.setPreviewUrl()
-		
+
 		// 因为common的themeInfo是从UserBlog.ThemeId来取的, 所以这里要fugai下
-		c.RenderArgs["themeInfo"] = c.RenderArgs["themeInfoPreview"];
+		c.RenderArgs["themeInfo"] = c.RenderArgs["themeInfoPreview"]
 	}
 	return blog.RenderTemplate(templateName, c.RenderArgs, revel.BasePath+"/"+themePath, isPreview)
 }
@@ -113,15 +113,15 @@ func (c Blog) setPreviewUrl() {
 	themeId := c.Session["themeId"]
 	theme := themeService.GetTheme(userId, themeId)
 
-	siteUrl := configService.GetSiteUrl()
-	blogUrl := siteUrl + "/preview" // blog.leanote.com
+	// siteUrl := configService.GetSiteUrl()
+	blogUrl := "/preview" // blog.leanote.com
 
 	indexUrl = blogUrl + "/" + userIdOrEmail
 	cateUrl = blogUrl + "/cate/" + userIdOrEmail // /notebookId
 
-	postUrl = blogUrl + "/post/" + userIdOrEmail                         // /xxxxx
+	postUrl = blogUrl + "/post/" + userIdOrEmail        // /xxxxx
 	searchUrl = blogUrl + "/search/" + userIdOrEmail    // blog.leanote.com/search/userId
-	singleUrl = blogUrl + "/single/" + userIdOrEmail                     // blog.leanote.com/single/singleId
+	singleUrl = blogUrl + "/single/" + userIdOrEmail    // blog.leanote.com/single/singleId
 	archiveUrl = blogUrl + "/archives/" + userIdOrEmail // blog.leanote.com/archive/userId
 	tagsUrl = blogUrl + "/tags/" + userIdOrEmail        // blog.leanote.com/archive/userId
 
@@ -143,8 +143,8 @@ func (c Blog) setPreviewUrl() {
 // 各种地址设置
 func (c Blog) setUrl(userBlog info.UserBlog, userInfo info.User) {
 	// 主页 http://leanote.com/blog/life or http://blog.leanote.com/life or http:// xxxx.leanote.com or aa.com
-	host := c.Request.Request.Host
-	var staticUrl = configService.GetUserUrl(strings.Split(host, ":")[0])
+	// host := c.Request.Request.Host
+	// var staticUrl = configService.GetUserUrl(strings.Split(host, ":")[0])
 	// staticUrl == host, 为保证同源!!! 只有host, http://leanote.com, http://blog/leanote.com
 	// life.leanote.com, lealife.com
 	siteUrl := configService.GetSiteUrl()
@@ -168,20 +168,20 @@ func (c Blog) setUrl(userBlog info.UserBlog, userInfo info.User) {
 	c.RenderArgs["themeBaseUrl"] = "/" + userBlog.ThemePath
 
 	// 其它static js
-	c.RenderArgs["jQueryUrl"] = siteUrl + "/js/jquery-1.9.0.min.js"
+	c.RenderArgs["jQueryUrl"] = "/js/jquery-1.9.0.min.js"
 
-	c.RenderArgs["prettifyJsUrl"] = siteUrl + "/js/google-code-prettify/prettify.js"
-	c.RenderArgs["prettifyCssUrl"] = siteUrl + "/js/google-code-prettify/prettify.css"
+	c.RenderArgs["prettifyJsUrl"] = "/js/google-code-prettify/prettify.js"
+	c.RenderArgs["prettifyCssUrl"] = "/js/google-code-prettify/prettify.css"
 
-	c.RenderArgs["blogCommonJsUrl"] = siteUrl + "/public/blog/js/common.js"
+	c.RenderArgs["blogCommonJsUrl"] = "/public/blog/js/common.js"
 
-	c.RenderArgs["shareCommentCssUrl"] = siteUrl + "/public/blog/css/share_comment.css"
-	c.RenderArgs["shareCommentJsUrl"] = siteUrl + "/public/blog/js/share_comment.js"
+	c.RenderArgs["shareCommentCssUrl"] = "/public/blog/css/share_comment.css"
+	c.RenderArgs["shareCommentJsUrl"] = "/public/blog/js/share_comment.js"
 
-	c.RenderArgs["fontAwesomeUrl"] = staticUrl + "/css/font-awesome-4.2.0/css/font-awesome.css"
+	c.RenderArgs["fontAwesomeUrl"] = "/css/font-awesome-4.2.0/css/font-awesome.css"
 
-	c.RenderArgs["bootstrapCssUrl"] = siteUrl + "/css/bootstrap.css"
-	c.RenderArgs["bootstrapJsUrl"] = siteUrl + "/js/bootstrap-min.js"
+	c.RenderArgs["bootstrapCssUrl"] = "/css/bootstrap.css"
+	c.RenderArgs["bootstrapJsUrl"] = "/js/bootstrap-min.js"
 }
 
 // 笔记本分类
@@ -220,7 +220,7 @@ func (c Blog) getCates(userBlog info.UserBlog) {
 			}
 		}
 	}
-	
+
 	// 之后添加没有排序的
 	for _, n := range notebooks {
 		id := n.NotebookId.Hex()
@@ -234,19 +234,19 @@ func (c Blog) getCates(userBlog info.UserBlog) {
 			i++
 		}
 	}
-	
-//	LogJ(">>")
-//	LogJ(cates)
-	
+
+	//	LogJ(">>")
+	//	LogJ(cates)
+
 	// 建立层级
 	hasParent := map[string]bool{} // 有父的cate
 	for _, cate := range cates {
 		parentCateId := cate.ParentCateId
 		if parentCateId != "" {
 			if parentCate, ok := cateMap[parentCateId]; ok {
-//				Log("________")
-//				LogJ(parentCate)
-//				LogJ(cate)
+				//				Log("________")
+				//				LogJ(parentCate)
+				//				LogJ(cate)
 				if parentCate.Children == nil {
 					parentCate.Children = []*info.Cate{cate}
 				} else {
@@ -256,7 +256,7 @@ func (c Blog) getCates(userBlog info.UserBlog) {
 			}
 		}
 	}
-	
+
 	// 得到没有父的cate, 作为第一级cate
 	catesTree := []*info.Cate{}
 	for _, cate := range cates {
@@ -264,11 +264,7 @@ func (c Blog) getCates(userBlog info.UserBlog) {
 			catesTree = append(catesTree, cate)
 		}
 	}
-	
-	Log("cates")
-	LogJ(cates)
-	LogJ(catesTree);
-	
+
 	c.RenderArgs["cates"] = cates
 	c.RenderArgs["catesTree"] = catesTree
 }
@@ -352,9 +348,10 @@ func (c Blog) blogCommon(userId string, userBlog info.UserBlog, userInfo info.Us
 	// 得到主题信息
 	themeInfo := themeService.GetThemeInfo(userBlog.ThemeId.Hex(), userBlog.Style)
 	c.RenderArgs["themeInfo"] = themeInfo
-	Log(">>")
-	Log(userBlog.Style)
-	Log(userBlog.ThemeId.Hex())
+
+	//	Log(">>")
+	//	Log(userBlog.Style)
+	//	Log(userBlog.ThemeId.Hex())
 
 	return true, userBlog
 }
@@ -510,6 +507,7 @@ func (c Blog) Archives(userIdOrEmail string, cateId string, year, month int) (re
 // 进入某个用户的博客
 var blogPageSize = 5
 var searchBlogPageSize = 30
+
 // 分类 /cate/xxxxxxxx?notebookId=1212
 func (c Blog) Cate(userIdOrEmail string, notebookId string) (re revel.Result) {
 	// 自定义域名
@@ -836,7 +834,7 @@ func (c Blog) GetComments(noteId string, callback string) revel.Result {
 	result["comments"] = comments
 	result["commentUserInfo"] = commentUserInfo
 	re.Item = result
-	
+
 	if callback != "" {
 		return c.RenderJsonP(callback, result)
 	}

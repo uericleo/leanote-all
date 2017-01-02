@@ -1,10 +1,10 @@
 package controllers
 
 import (
-	"github.com/leanote/leanote/app/service"
 	"github.com/leanote/leanote/app/info"
 	"github.com/leanote/leanote/app/lea/blog"
-//	. "github.com/leanote/leanote/app/lea"
+	"github.com/leanote/leanote/app/service"
+	//	. "github.com/leanote/leanote/app/lea"
 	"github.com/revel/revel"
 	"strings"
 )
@@ -48,7 +48,7 @@ var commonUrl = map[string]map[string]bool{"Index": map[string]bool{"Index": tru
 	"FindPasswordUpdate": true,
 	"Suggestion":         true,
 },
-	"Note": map[string]bool{"ToImage": true},
+	"Note": map[string]bool{"ToPdf": true},
 	"Blog": map[string]bool{"Index": true,
 		"View":               true,
 		"AboutMe":            true,
@@ -68,7 +68,7 @@ var commonUrl = map[string]map[string]bool{"Index": map[string]bool{"Index": tru
 	},
 	"Oauth":  map[string]bool{"GithubCallback": true},
 	"File":   map[string]bool{"OutputImage": true, "OutputFile": true},
-	"Attach": map[string]bool{"Download": true, "DownloadAll": true},
+	"Attach": map[string]bool{"Download": true /*, "DownloadAll": true*/},
 }
 
 func needValidate(controller, method string) bool {
@@ -146,9 +146,10 @@ func init() {
 	revel.InterceptFunc(AuthInterceptor, revel.BEFORE, &Note{})
 	revel.InterceptFunc(AuthInterceptor, revel.BEFORE, &Share{})
 	revel.InterceptFunc(AuthInterceptor, revel.BEFORE, &User{})
+	revel.InterceptFunc(AuthInterceptor, revel.BEFORE, &Album{})
 	revel.InterceptFunc(AuthInterceptor, revel.BEFORE, &File{})
 	revel.InterceptFunc(AuthInterceptor, revel.BEFORE, &Attach{})
-//	revel.InterceptFunc(AuthInterceptor, revel.BEFORE, &Blog{})
+	//	revel.InterceptFunc(AuthInterceptor, revel.BEFORE, &Blog{})
 	revel.InterceptFunc(AuthInterceptor, revel.BEFORE, &NoteContentHistory{})
 
 	revel.OnAppStart(func() {

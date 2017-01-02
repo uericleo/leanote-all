@@ -16,24 +16,24 @@
 		<script src="/public/admin/js/ie/excanvas.js"></script>
 	<![endif]-->
 </head>
-<body class="">
+<body class="lang-{{$.locale}}">
 	<section class="vbox">
 		<header class="bg-dark dk header navbar navbar-fixed-top-xs">
-			<div class="navbar-header aside-md" id="logo">
+			<div class="navbar-header aside-md logo-ctn">
 				<a href="/member" class="navbar-brand clearfix" data-toggle="fullscreen">
-					<span class="logo-icon"></span>
+					<span id="logo"></span>
 					<span class="logo-title">{{msg . "memberCenter"}}</span>
 				</a>
 			</div>
 			
 			<ul class="nav navbar-nav navbar-right m-n hidden-xs nav-user">
 				<li class="hidden-xs">
-					<a href="/note" class="dk" target="_blank">
+					<a href="/note" class="dk">
 						{{msg . "myNote"}}
 					</a>
 				</li>
 				<li class="hidden-xs">
-					<a href="/blog/{{$.session.Username}}" class="dk" target="_blank">
+					<a href="/blog/{{$.session.Username}}" class="dk">
 						{{msg . "myBlog"}}
 					</a>
 				</li>
@@ -50,7 +50,7 @@
 		<section>
 			<section class="hbox stretch">
 				<!-- .aside -->
-				<aside class="bg-light lter b-r aside-md hidden-print hidden-xs" id="nav">
+				<aside class="bg-light lter b-r aside-md hidden-print" id="nav">
 					<section class="vbox">
 						<!--
 						<header class="header bg-primary lter text-center clearfix">
@@ -74,7 +74,7 @@
 						</section>
 						<footer class="footer lt hidden-xs b-t b-light" style="min-height: initial;
 padding: 10px 15px;text-align:center;">
-							<a href="http://leanote.com" target="_blank">leanote</a> © 2015
+							© <a href="https://leanote.com" target="_blank">Leanote</a>
 							<!--
 							<a href="#nav" data-toggle="class:nav-xs" class="pull-right btn btn-sm btn-default btn-icon">
 								<i class="fa fa-angle-left text">

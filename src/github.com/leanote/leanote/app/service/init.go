@@ -1,13 +1,14 @@
 package service
 
 import (
-	"regexp"
-	"strings"
-	"net/url"
-	"strconv"
-	"gopkg.in/mgo.v2"
 	"github.com/leanote/leanote/app/db"
+	. "github.com/leanote/leanote/app/lea"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"net/url"
+	"regexp"
+	"strconv"
+	"strings"
 )
 
 // init service, for share service bettween services
@@ -61,7 +62,7 @@ func InitService() {
 	UpgradeS = &UpgradeService{}
 	SessionS = &SessionService{}
 	ThemeS = &ThemeService{}
-	
+
 	notebookService = NotebookS
 	noteService = NoteS
 	noteContentHistoryService = NoteContentHistoryS
@@ -90,7 +91,7 @@ func decodeValue(val string) string {
 	v, _ := url.ParseQuery("a=" + val)
 	return v.Get("a")
 }
-		
+
 func encodeValue(val string) string {
 	if val == "" {
 		return val
@@ -99,16 +100,17 @@ func encodeValue(val string) string {
 	v.Set("", val)
 	return v.Encode()[1:]
 }
+
 // 添加笔记时通过title得到urlTitle
 func fixUrlTitle(urlTitle string) string {
 	if urlTitle != "" {
 		// 把特殊字段给替换掉
-//		str := `life "%&()+,/:;<>=?@\|`
+		//		str := `life "%&()+,/:;<>=?@\|`
 		reg, _ := regexp.Compile("/|#|\\$|!|\\^|\\*|'| |\"|%|&|\\(|\\)|\\+|\\,|/|:|;|<|>|=|\\?|@|\\||\\\\")
 		urlTitle = reg.ReplaceAllString(urlTitle, "-")
 		urlTitle = strings.Trim(urlTitle, "-") // 左右单独的-去掉
 		// 把空格替换成-
-//		urlTitle = strings.Replace(urlTitle, " ", "-", -1)
+		//		urlTitle = strings.Replace(urlTitle, " ", "-", -1)
 		for strings.Index(urlTitle, "--") >= 0 { // 防止出现连续的--
 			urlTitle = strings.Replace(urlTitle, "--", "-", -1)
 		}
@@ -119,11 +121,20 @@ func fixUrlTitle(urlTitle string) string {
 
 func getUniqueUrlTitle(userId string, urlTitle string, types string, padding int) string {
 	urlTitle2 := urlTitle
+
+	// 判断urlTitle是不是过长, 过长则截断, 300
+	// 不然生成index有问题
+	// it will not index a single field with more than 1024 bytes.
+	// If you're indexing a field that is 2.5MB, it's not really indexing it, it's being skipped.
+	if len(urlTitle2) > 320 {
+		urlTitle2 = urlTitle2[:300] // 为什么要少些, 因为怕无限循环, 因为把padding截了
+	}
+
 	if padding > 1 {
 		urlTitle2 = urlTitle + "-" + strconv.Itoa(padding)
 	}
 	userIdO := bson.ObjectIdHex(userId)
-	
+
 	var collection *mgo.Collection
 	if types == "note" {
 		collection = db.Notes
@@ -136,15 +147,32 @@ func getUniqueUrlTitle(userId string, urlTitle string, types string, padding int
 		padding++
 		urlTitle2 = urlTitle + "-" + strconv.Itoa(padding)
 	}
-	
+
 	return urlTitle2
 }
+
+// 截取id 24位变成12位
+// 先md5, 再取12位
+func subIdHalf(id string) string {
+	idMd5 := Md5(id)
+	return idMd5[:12]
+}
+
 // types == note,notebook,single
-func GetUrTitle(userId string, title string, types string) string {
+// id noteId, notebookId, singleId 当title没的时候才有用, 用它来替换
+func GetUrTitle(userId string, title string, types string, id string) string {
 	urlTitle := strings.Trim(title, " ")
 	if urlTitle == "" {
-		urlTitle = "Untitled-" + userId
+		if id == "" {
+			urlTitle = "Untitled-" + userId
+		} else {
+			urlTitle = subIdHalf(id)
+		}
+		// 不允许title是ObjectId
+	} else if bson.IsObjectIdHex(title) {
+		urlTitle = subIdHalf(id)
 	}
+
 	urlTitle = fixUrlTitle(urlTitle)
 	return getUniqueUrlTitle(userId, urlTitle, types, 1)
 }

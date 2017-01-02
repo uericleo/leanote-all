@@ -14,7 +14,7 @@
 @leftNotebookWidth: 170px;
 @noteListWidth: 250px;
 @noteActiveBg: #65bd77;
-
+ 
 @bgColor: #fbfcf7;
 @headerBgColor: #fbfcf7;
 @fontFamily: 'Open Sans','Helvetica Neue',Arial,'Hiragino Sans GB','Microsoft YaHei','WenQuanYi Micro Hei',sans-serif;
@@ -116,9 +116,11 @@ a.raw:hover {
 
 #searchWrap, #logo, #switcher, 
 #leftNotebook, 
-.noteSplit
-{
-	display: none;	
+.noteSplit,
+.for-split,
+#curNotebookForNewNote
+{ 
+	display: none !important;	
 }
 
 #header ul {
@@ -420,7 +422,11 @@ a.raw:hover {
   position: relative; 
   height: 30px; 
   overflow: hidden; 
+  border-bottom: none;
   background-color: @bgColor;
+}
+#wmd-button-bar {
+  overflow: visible;
 }
 /* 编辑器工具 需要important, 因为mce还要有js加载css, 肯定在此之后 */
 
@@ -788,6 +794,15 @@ background-position:-1px -670px
 	background: none;
 }
 
+.new-note {
+    background-color: #FBFCF7;
+    border: 1px solid #ddd;
+    &:hover {
+      background-color: #FBFCF7;
+      border-color: rgba(103, 95, 95, 1);
+    }
+}
+
 .new-note-left {
 	padding: 0 5px;
 	width: 95px;
@@ -860,7 +875,8 @@ html,body {
 #myProfile,
 #demoRegister
 {
-	display: none;
+// display: none;
+  visibility: hidden; // 不能隐藏, 不然点击目录markdown不能跳转 
 }
 #mainMask {
   position: absolute;
@@ -938,6 +954,7 @@ html,body {
 	border: none;
 	background-color: @bgColor !important;
 	font-size: 16px !important;
+  margin-top: 10px;
 }
 #md-section-helper {
 	display: none;
@@ -986,6 +1003,7 @@ html,body {
 }
 #noteTitleDiv {
   height: 30px;
+  border: none;
 }
 #noteTitle {
   height: 100%;
@@ -1008,6 +1026,7 @@ html,body {
 	opacity: 0.8;
 	overflow-x: hidden;
 	overflow-y: hidden;
+  border: none;
 	#notesAndSort {
 		display: none;
 	}
@@ -1049,7 +1068,7 @@ html,body {
 #leanoteNav {
 	background-color: @bgColor;
 	opacity: 0.3;
-	right: -30px;
+	// right: -30px;
 }
 
 .new-note-right {
@@ -1162,6 +1181,10 @@ body {
 
 #editorContent {
 	padding-top: 10px;
+}
+
+#noteAndEditor {
+  position: static;
 }
 
 // tool-bar

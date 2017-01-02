@@ -108,7 +108,7 @@ Tag.renderReadOnlyTags = function(tags) {
 		if(!classes) {
 			classes = getNextDefaultClasses();
 		}
-		tag = tt('<span class="?">?</span>', classes, text);
+		tag = tt('<span class="?">?</span>', classes, trimTitle(text));
 		
 		$("#noteReadTags").append(tag);
 	}
@@ -172,8 +172,6 @@ Tag.appendTag = function(tag, save) {
 	
 	// 笔记已污染
 	if(save) {
-		Note.curNoteIsDirtied();
-		
 		// 如果之前不存, 则添加之
 		if(!isExists) {
 			Note.curChangedSaveIt(true, function() {
@@ -235,6 +233,7 @@ Tag.renderTagNav = function(tags) {
 		if(LEA.locale == "zh") {
 			var text = Tag.mapEn2Cn[tag] || text;
 		}
+		text = trimTitle(text);
 		var classes = Tag.classes[tag] || "label label-default";
 		$("#tagNav").append(tt('<li data-tag="?"><a> <span class="?">?</span> <span class="tag-delete">X</span></li>', tag, classes, text));
 	}

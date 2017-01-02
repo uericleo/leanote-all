@@ -6,7 +6,7 @@
 	</div>
 	-->
 	<div>
-		<h1 id="logo">leanote</h1>
+		<h1 id="logo"></h1>
 		<div id="boxForm">
 			<div id="boxHeader">{{msg . "register"}}</div>
 			<form>
@@ -43,7 +43,7 @@
 		<a href="/index">{{msg . "home"}}</a>
 	</p>
 	<p>
-		<a href="/index">leanote</a> © 2014-2015
+		© <a href="https://leanote.com">Leanote</a>
 	</p>
 </div>
 
@@ -72,7 +72,7 @@ $(function() {
 			showMsg("{{msg . "inputEmail"}}", "email");
 			return;
 		} else {
-			var myreg = /^([a-zA-Z0-9]+[_|\_|\.]?)*[a-zA-Z0-9]+@([a-zA-Z0-9]+[_|\_|\.]?)*[a-zA-Z0-9]+\.[0-9a-zA-Z]{2,3}$/;
+			var myreg = /^([a-zA-Z0-9]+[_|\_|\.|\-]?)*[a-zA-Z0-9\-_]+@([a-zA-Z0-9\-]+[_|\_|\.|\-]?)*[a-zA-Z0-9\-]+\.[0-9a-zA-Z]{2,6}$/;
 			if(!myreg.test(email)) {
 				showMsg("{{msg . "wrongEmail"}}", "email");
 				return;

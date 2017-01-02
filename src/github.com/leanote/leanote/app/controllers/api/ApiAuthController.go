@@ -24,8 +24,8 @@ type ApiAuth struct {
 func (c ApiAuth) Login(email, pwd string) revel.Result {
 	var msg = ""
 
-	userInfo := authService.Login(email, pwd)
-	if userInfo.Email != "" {
+	userInfo, err := authService.Login(email, pwd)
+	if err == nil {
 		token := bson.NewObjectId().Hex()
 		sessionService.SetUserId(token, userInfo.UserId.Hex())
 		return c.RenderJson(info.AuthOk{Ok: true, Token: token, UserId: userInfo.UserId, Email: userInfo.Email, Username: userInfo.Username})
