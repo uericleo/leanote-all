@@ -28,7 +28,7 @@ gulp.task('concatDepJs', function() {
         'js/jQuery-slimScroll-1.3.0/jquery.slimscroll-min.js',
         'js/contextmenu/jquery.contextmenu-min.js',
         'js/bootstrap-min.js',
-        'js/object_id-min.js',
+        'js/object_id.js',
     ];
 
     for(var i in jss) {
@@ -340,7 +340,7 @@ gulp.task('tinymce', function() {
 
     var cp = require('child_process');
 
-    var bundleCmd = 'grunt bundle --themes leanote --plugins autolink,link,leaui_image,lists,hr,paste,searchreplace,leanote_nav,leanote_code,tabfocus,table,directionality,textcolor';
+    var bundleCmd = 'grunt bundle --themes leanote --plugins autolink,link,leaui_image,leaui_mindmap,lists,hr,paste,searchreplace,leanote_nav,leanote_code,tabfocus,table,directionality,textcolor';
     // build
     cp.exec('grunt minify', {cwd: tinymceBase}, function(err, stdout, stderr) {
         console.log('stdout: ' + stdout);

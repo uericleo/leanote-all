@@ -210,6 +210,8 @@ Tag.removeTag = function($target) {
 		tag = Tag.mapCn2En[tag] || tag;
 	}
 	Note.curChangedSaveIt(true, function() {
+		return;
+
 		ajaxPost("/tag/updateTag", {tag: tag}, function(ret) {
 			if(reIsOk(ret)) {
 				Tag.addTagNav(ret.Item);
@@ -234,8 +236,21 @@ Tag.renderTagNav = function(tags) {
 			var text = Tag.mapEn2Cn[tag] || text;
 		}
 		text = trimTitle(text);
-		var classes = Tag.classes[tag] || "label label-default";
-		$("#tagNav").append(tt('<li data-tag="?"><a> <span class="?">?</span> <span class="tag-delete">X</span></li>', tag, classes, text));
+		if (text) {
+			var classes = Tag.classes[tag] || "label label-default";
+			$("#tagNav").append(tt('<li data-tag="?"><a> <span class="?">?</span> <span class="tag-delete">X</span></li>', tag, classes, text));
+		}
+	}
+};
+
+Tag.deleteTag = function(title) {
+	var me = this;
+	for(var i = 0; i < this.tags.length; ++i) {
+		var tag = this.tags[i];
+		if (tag.Tag == title) {
+			this.tags.splice(i, 1);
+			break;
+		}
 	}
 };
 
@@ -328,6 +343,9 @@ $(function() {
 					var item = re.Item; // 被删除的
 					Note.deleteNoteTag(item, tag);
 					$li.remove();
+
+					// 删除tags
+					Tag.deleteTag(tag);
 				}
 			});
 		};
@@ -351,6 +369,7 @@ $(function() {
 		
 		$("#tagSearch").html($li.html()).show();
 		$("#tagSearch .tag-delete").remove();
+		Note.listIsIn(true, false);
 		
 		showLoading();
 		ajaxGet("/note/searchNoteByTags", {tags: [tag]}, function(notes) {
@@ -359,7 +378,7 @@ $(function() {
 				// 和note搜索一样
 				// 设空, 防止发生上述情况
 				// Note.curNoteId = "";
-				
+
 				Note.renderNotes(notes);
 				if(!isEmpty(notes)) {
 					Note.changeNote(notes[0].NoteId);
